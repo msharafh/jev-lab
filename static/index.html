@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jev Lab · Capture Triage</title>
+<style>
+@font-face { font-family: "Space Grotesk"; src: url("/static/fonts/SpaceGrotesk-VariableFont_wght.ttf") format("truetype"); font-weight: 300 700; font-display: swap; }
+@font-face { font-family: "Space Mono"; src: url("/static/fonts/SpaceMono-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Space Mono"; src: url("/static/fonts/SpaceMono-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+
+:root {
+  --midnight: #0D1422; --midnight-800: #141C2E; --midnight-600: #273246;
+  --green: #22C55E; --green-700: #15803D; --green-50: #ECFAF1;
+  --mist: #F4F6F8; --white: #FFFFFF; --slate: #6B7280; --slate-700: #4B5563; --slate-300: #9CA3AF;
+  --border: #DDE2E7; --border-strong: #C6CDD4;
+  --blue: #2563A5; --blue-50: #EAF1F9; --amber: #A16207; --amber-50: #FBF3E3;
+  --display: "Space Grotesk", system-ui, sans-serif; --mono: "Space Mono", ui-monospace, monospace;
+  --r: 16px; --r-sm: 10px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--mist); color: var(--midnight); font-family: var(--display); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid rgba(34,197,94,.45); outline-offset: 2px; border-radius: 6px; }
+
+/* ---------- header */
+header { background: var(--midnight); color: var(--white); display: flex; align-items: center; gap: 20px; padding: 14px 24px; position: sticky; top: 0; z-index: 5; }
+.wordmark { font-family: var(--mono); font-weight: 700; letter-spacing: .04em; font-size: 16px; }
+.wordmark span { color: var(--green); }
+.crumb { font-family: var(--mono); font-size: 12px; color: var(--slate-300); letter-spacing: .08em; }
+.spacer { flex: 1; }
+.pill { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; padding: 4px 10px; border: 1px solid rgba(255,255,255,.18); border-radius: 999px; white-space: nowrap; }
+.pill .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; background: var(--slate-300); }
+.pill.ok .dot { background: var(--green); }
+.pill.bad .dot { background: #E0864A; }
+.pill.live .dot { background: var(--green); animation: pulse 1.2s infinite; }
+@keyframes pulse { 50% { opacity: .3; } }
+
+/* ---------- layout */
+.layout { display: grid; grid-template-columns: 300px minmax(0, 1fr) 460px; gap: 16px; padding: 16px 24px 32px; align-items: start; }
+.col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.sticky { position: sticky; top: 72px; max-height: calc(100vh - 88px); overflow: auto; }
+@media (max-width: 1320px) { .layout { grid-template-columns: 280px minmax(0,1fr); } .detail-col { grid-column: 1 / -1; } .sticky { position: static; max-height: none; } }
+@media (max-width: 820px) { .layout { grid-template-columns: 1fr; padding: 12px; } header { flex-wrap: wrap; padding: 12px 16px; } }
+
+.card { background: var(--white); border: 1px solid var(--border); border-radius: var(--r); padding: 18px; }
+.eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; color: var(--slate); text-transform: uppercase; margin: 0 0 12px; display: flex; justify-content: space-between; gap: 8px; }
+label.f { display: block; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--slate-700); margin: 12px 0 6px; text-transform: uppercase; }
+select, input[type=number], input[type=search] { width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: var(--r-sm); background: var(--white); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--border-strong); border-radius: var(--r-sm); overflow: hidden; }
+.seg button { min-height: 44px; border: 0; background: var(--white); font-family: var(--mono); font-size: 12px; letter-spacing: .06em; cursor: pointer; }
+.seg button[aria-pressed=true] { background: var(--midnight); color: var(--white); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.actions { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-top: 16px; }
+.btn { min-height: 44px; border-radius: var(--r-sm); border: 1px solid var(--border-strong); background: var(--white); font-family: var(--mono); font-size: 13px; letter-spacing: .06em; padding: 0 16px; cursor: pointer; }
+.btn:hover { border-color: var(--midnight); }
+.btn.primary { background: var(--green); border-color: var(--green); color: var(--midnight); font-weight: 700; }
+.btn.primary:hover { background: var(--green-700); border-color: var(--green-700); color: var(--white); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.hint { font-size: 12.5px; color: var(--slate); margin: 8px 0 0; }
+.err { font-family: var(--mono); font-size: 11px; color: #9A3412; background: #FFF4ED; border: 1px solid #F6D2BD; border-radius: 8px; padding: 8px 10px; margin-top: 10px; max-height: 120px; overflow: auto; white-space: pre-wrap; }
+
+/* threshold */
+.fit-val { font-family: var(--mono); font-size: 22px; font-weight: 700; }
+input[type=range] { width: 100%; accent-color: var(--midnight); min-height: 32px; }
+
+/* metrics */
+.progress { height: 6px; background: var(--mist); border-radius: 99px; overflow: hidden; margin: 8px 0 14px; }
+.progress > i { display: block; height: 100%; width: 0; background: var(--midnight); transition: width .3s; }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tile { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
+.tile b { display: block; font-family: var(--mono); font-size: 20px; line-height: 1.2; }
+.tile span { font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; color: var(--slate); text-transform: uppercase; }
+.tile small { display: block; font-size: 11.5px; color: var(--slate); }
+
+/* page bars */
+.pbar { display: grid; grid-template-columns: minmax(0,1fr) 34px; gap: 8px; align-items: center; margin: 7px 0; font-size: 13px; }
+.pbar .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pbar .track { grid-column: 1 / -1; height: 5px; background: var(--mist); border-radius: 99px; overflow: hidden; margin-top: -4px; display: flex; }
+.pbar .track i { display: block; height: 100%; }
+.pbar .n { font-family: var(--mono); font-size: 12px; text-align: right; }
+
+/* feed */
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tab { min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--white); font-family: var(--mono); font-size: 11.5px; letter-spacing: .04em; cursor: pointer; }
+.tab[aria-pressed=true] { background: var(--midnight); color: var(--white); border-color: var(--midnight); }
+.tab .c { opacity: .65; margin-left: 4px; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--slate); margin-top: 12px; }
+.feed { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.empty { text-align: center; color: var(--slate); padding: 48px 16px; border: 1px dashed var(--border-strong); border-radius: var(--r); background: var(--white); }
+.empty .big { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; color: var(--midnight); margin-bottom: 6px; }
+.item { text-align: left; width: 100%; background: var(--white); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; cursor: pointer; display: block; transition: box-shadow .15s, border-color .15s; }
+.item:hover { box-shadow: 0 8px 30px rgba(13,20,34,.07); border-color: var(--border-strong); }
+.item[aria-current=true] { border-color: var(--midnight); box-shadow: inset 3px 0 0 var(--midnight); }
+.item.fresh { animation: fresh 1.2s ease-out; }
+@keyframes fresh { from { background: var(--green-50); } }
+.i-top { display: flex; gap: 8px; align-items: center; font-family: var(--mono); font-size: 11px; color: var(--slate); }
+.src { border: 1px solid var(--border-strong); border-radius: 6px; padding: 1px 6px; color: var(--midnight); letter-spacing: .06em; }
+.promo { margin-left: auto; color: var(--amber); background: var(--amber-50); border: 1px solid #EBD3A3; border-radius: 6px; padding: 1px 6px; }
+.i-title { font-weight: 600; margin: 6px 0 8px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 12px; border-radius: 7px; padding: 2px 8px; border: 1px solid var(--border); background: var(--mist); white-space: nowrap; }
+.chip i { font-style: normal; font-family: var(--mono); font-weight: 700; margin-right: 4px; }
+.chip.agree { background: var(--blue-50); border-color: #BCD2EA; color: #1D4F84; }
+.chip.jev { background: var(--amber-50); border-color: #EBD3A3; color: #7A4B06; }
+.chip.kw { background: var(--white); border-style: dashed; color: var(--slate-700); }
+.chip.kw span { text-decoration: line-through; text-decoration-color: var(--slate-300); }
+.chip.none { color: var(--slate); }
+.chip.out { color: var(--slate); background: var(--white); }
+.sig { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 10px; font-family: var(--mono); font-size: 11px; color: var(--slate); align-items: center; }
+.sig b { color: var(--midnight); font-weight: 700; }
+.meter { display: inline-block; width: 56px; height: 5px; background: var(--mist); border-radius: 99px; overflow: hidden; vertical-align: 1px; margin-left: 6px; }
+.meter i { display: block; height: 100%; background: var(--midnight); }
+.dots { letter-spacing: 2px; color: var(--midnight); }
+
+/* detail */
+.d-empty { color: var(--slate); font-size: 14px; }
+.d-meta { font-family: var(--mono); font-size: 11px; color: var(--slate); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.d-title { font-size: 19px; font-weight: 600; line-height: 1.3; margin: 8px 0 4px; }
+.d-sec { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 16px; }
+.d-sec h3 { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; font-weight: 400; color: var(--slate); text-transform: uppercase; margin: 0 0 10px; display: flex; justify-content: space-between; }
+.bar { display: grid; grid-template-columns: minmax(0,1fr) 52px; gap: 4px 10px; margin: 8px 0; font-size: 13px; align-items: center; }
+.bar .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar .lbl em { font-style: normal; font-family: var(--mono); font-size: 10px; letter-spacing: .06em; color: #1D4F84; background: var(--blue-50); border-radius: 4px; padding: 0 5px; margin-left: 6px; }
+.bar .v { font-family: var(--mono); font-size: 12px; text-align: right; }
+.bar .tr { grid-column: 1 / -1; position: relative; height: 8px; background: var(--mist); border-radius: 99px; }
+.bar .tr i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; background: var(--slate-300); }
+.bar.win .tr i { background: var(--midnight); }
+.bar .tr .th { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--amber); }
+.verdict { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; margin-left: 6px; padding: 0 5px; border-radius: 4px; border: 1px solid var(--border-strong); }
+.verdict.yes { border-color: var(--midnight); background: var(--midnight); color: var(--white); }
+.cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cmp h4 { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; font-weight: 400; color: var(--slate); margin: 0 0 6px; text-transform: uppercase; }
+.cmp ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.text { white-space: pre-wrap; font-size: 13.5px; line-height: 1.55; color: var(--slate-700); background: var(--mist); border-radius: 12px; padding: 12px 14px; max-height: 340px; overflow: auto; }
+.open { font-family: var(--mono); font-size: 11px; color: var(--midnight); border: 1px solid var(--border-strong); border-radius: 6px; padding: 2px 8px; text-decoration: none; }
+.open:hover { border-color: var(--midnight); }
+.note { font-size: 12.5px; color: var(--slate); margin: 6px 0 0; }
+/* api activity */
+.pulse-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.counters { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 4px 0 14px; }
+@media (max-width: 700px) { .counters { grid-template-columns: repeat(3, 1fr); } }
+.ctr { border: 1px solid var(--border); border-radius: 12px; padding: 8px 10px; }
+.ctr b { display: block; font-family: var(--mono); font-size: 20px; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.ctr span { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; color: var(--slate); text-transform: uppercase; }
+.ctr.flight b { display: flex; align-items: center; gap: 8px; }
+.ctr.flight b::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--slate-300); }
+.ctr.flight.on b::after { background: var(--green); animation: pulse 1s infinite; }
+.grid-wrap { overflow-x: hidden; overflow-y: auto; max-height: 177px; padding: 2px 2px 4px; scrollbar-width: thin; }
+.cgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(12px, 1fr)); grid-auto-rows: 12px; gap: 3px; justify-items: center; }
+.cell { width: 12px; height: 12px; border-radius: 3px; background: var(--mist); border: 1px solid rgba(13,20,34,.06); padding: 0; cursor: pointer; }
+.cell.fl { background: var(--white); border: 1.5px solid var(--midnight); animation: pulse 1s infinite; }
+.cell.l1 { background: #C3CBD6; } .cell.l2 { background: #8390A6; } .cell.l3 { background: #3F4D66; } .cell.l4 { background: #0D1422; }
+.cell.s2 { border-radius: 50%; }
+.cell.fail { background: #E7A04C; border-color: #B45309; }
+.cell.new { animation: pop .35s ease-out; }
+@keyframes pop { from { transform: scale(.3); } }
+.cell.sel { outline: 2px solid var(--amber); outline-offset: 1px; }
+.ghost { width: 12px; height: 12px; border-radius: 3px; background: var(--mist); }
+.pulse-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-family: var(--mono); font-size: 10.5px; color: var(--slate); margin-top: 8px; }
+.scale { display: inline-flex; align-items: center; gap: 3px; }
+.scale .cell { cursor: default; }
+.tip { position: fixed; z-index: 20; pointer-events: none; background: var(--midnight); color: var(--white); font-family: var(--mono); font-size: 11px; line-height: 1.5; padding: 7px 10px; border-radius: 8px; max-width: 320px; box-shadow: 0 12px 40px rgba(13,20,34,.25); }
+.tip b { color: var(--white); font-weight: 700; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+<header>
+  <div class="wordmark">JEV<span>_</span>LAB</div>
+  <div class="crumb">CAPTURE TRIAGE</div>
+  <div class="spacer"></div>
+  <div class="pill" id="p-key"><span class="dot"></span>KEY::…</div>
+  <div class="pill" id="p-model"><span class="dot"></span>MODEL::…</div>
+  <div class="pill" id="p-run"><span class="dot"></span>RUN::IDLE</div>
+</header>
+
+<div class="layout">
+  <!-- left -->
+  <div class="col">
+    <section class="card" aria-labelledby="h-run">
+      <p class="eyebrow" id="h-run"><span>01 / Run</span><span id="corpus"></span></p>
+      <label class="f" for="set">Capture set</label>
+      <select id="set">
+        <option value="default">Linked + 100 unlinked sample</option>
+        <option value="labeled">Linked only (has keyword links)</option>
+        <option value="unlabeled">Unlinked only</option>
+        <option value="all">All captures</option>
+      </select>
+      <div class="row2">
+        <div><label class="f" for="limit">Limit</label><input id="limit" type="number" min="0" value="25"></div>
+        <div><label class="f" for="conc">Parallel</label><input id="conc" type="number" min="1" max="12" value="6"></div>
+      </div>
+      <label class="f" id="mode-l">Mode</label>
+      <div class="seg" role="group" aria-labelledby="mode-l">
+        <button id="m-live" aria-pressed="true">LIVE · JEV</button>
+        <button id="m-mock" aria-pressed="false">MOCK · OFFLINE</button>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="run">Run triage →</button>
+        <button class="btn" id="stop" disabled>Stop</button>
+      </div>
+      <p class="hint" id="estimate"></p>
+      <div class="err" id="errors" hidden></div>
+      <label class="f" for="past">Past runs</label>
+      <select id="past"><option value="">— load a previous run —</option></select>
+    </section>
+
+    <section class="card" aria-labelledby="h-fit">
+      <p class="eyebrow" id="h-fit"><span>02 / Link threshold</span></p>
+      <div class="fit-val" id="fit-val">0.50</div>
+      <input type="range" id="fit" min="0.2" max="0.9" step="0.05" value="0.5" aria-label="Link threshold">
+      <p class="hint">A candidate page becomes a link when Jev's fit probability ≥ this value. Moving it re-scores everything instantly; no new API calls.</p>
+    </section>
+
+    <section class="card" aria-labelledby="h-met">
+      <p class="eyebrow" id="h-met"><span>03 / Metrics</span><span id="m-count">0 / 0</span></p>
+      <div class="progress" aria-hidden="true"><i id="prog"></i></div>
+      <div class="tiles">
+        <div class="tile"><span>Top-1 agree</span><b id="t-top1">—</b><small id="t-top1s">vs keyword links</small></div>
+        <div class="tile"><span>Top-3 agree</span><b id="t-top3">—</b><small>in shortlist</small></div>
+        <div class="tile"><span>Precision</span><b id="t-prec">—</b><small id="t-precs">at threshold</small></div>
+        <div class="tile"><span>Recall</span><b id="t-rec">—</b><small id="t-recs">at threshold</small></div>
+        <div class="tile"><span>New links</span><b id="t-new">—</b><small id="t-news">unlinked captures</small></div>
+        <div class="tile"><span>Promo</span><b id="t-promo">—</b><small>p ≥ 0.5</small></div>
+        <div class="tile"><span>Cost</span><b id="t-cost">—</b><small id="t-tok">tokens</small></div>
+        <div class="tile"><span>Latency p50</span><b id="t-lat">—</b><small id="t-lat90">p90</small></div>
+      </div>
+      <p class="note">Keyword links are a baseline, not ground truth. Read the disagreements to judge who is right.</p>
+    </section>
+
+    <section class="card" aria-labelledby="h-pages">
+      <p class="eyebrow" id="h-pages"><span>04 / Where Jev links</span></p>
+      <div id="pages"><p class="hint">Pages appear as results arrive.</p></div>
+    </section>
+  </div>
+
+  <!-- center -->
+  <div class="col">
+    <section class="card">
+      <div class="toolbar" role="group" aria-label="Filter results" id="tabs"></div>
+      <div style="margin-top:12px"><input type="search" id="q" placeholder="Search title, author or page…" aria-label="Search results"></div>
+      <div class="legend">
+        <span><span class="chip agree"><i>=</i>agree</span> both link</span>
+        <span><span class="chip jev"><i>+</i>Jev only</span> Jev adds</span>
+        <span><span class="chip kw"><i>−</i><span>keyword only</span></span> Jev drops</span>
+      </div>
+    </section>
+    <section class="card" aria-labelledby="h-api">
+      <div class="pulse-head">
+        <p class="eyebrow" id="h-api" style="margin:0 0 10px"><span>API activity · POST /v1/systemone</span></p>
+        <span class="eyebrow" style="margin:0 0 10px" id="api-rate">— req/min</span>
+      </div>
+      <div class="counters">
+        <div class="ctr"><span>Fired</span><b id="c-fired">0</b></div>
+        <div class="ctr"><span>Received</span><b id="c-recv">0</b></div>
+        <div class="ctr flight" id="c-flight-box"><span>In flight</span><b id="c-flight">0</b></div>
+        <div class="ctr"><span>Failed</span><b id="c-fail">0</b></div>
+        <div class="ctr"><span>Avg latency</span><b id="c-lat">—</b></div>
+      </div>
+      <div class="grid-wrap" id="grid-wrap"><div class="cgrid" id="cgrid" role="list" aria-label="One square per API call"></div></div>
+      <div class="pulse-foot">
+        <span>Square = stage 1 · circle = stage 2 fit check · outlined = in flight · amber = failed</span>
+        <span class="scale">Fast <i class="cell l1"></i><i class="cell l2"></i><i class="cell l3"></i><i class="cell l4"></i> Slow</span>
+      </div>
+    </section>
+    <div class="feed" id="feed" aria-live="polite">
+      <div class="empty"><div class="big">NO RESULTS YET</div>Choose a capture set and select <b>Run triage</b>, or load a past run.</div>
+    </div>
+  </div>
+
+  <!-- right -->
+  <div class="col detail-col">
+    <section class="card sticky" id="detail" aria-live="polite">
+      <p class="eyebrow"><span>05 / Inspect</span></p>
+      <p class="d-empty">Select a capture to see Jev's signals: page probabilities, per-candidate fit, substance and promotion, next to the original text.</p>
+    </section>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pct = x => (x == null || isNaN(x)) ? "—" : Math.round(x * 100) + "%";
+const short = n => n.length > 34 ? n.slice(0, 32) + "…" : n;
+
+const S = { meta: null, rows: [], byId: new Map(), total: 0, fit: 0.5, filter: "all", q: "", sel: null,
+            mock: false, es: null, runId: null, status: "idle", caps: new Map(), fresh: new Set(), errors: [] };
+let raf = 0;
+const schedule = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; render(); }); };
+
+// ---------------------------------------------------------------- classification
+function cls(r) {
+  const cat = S.catSet;
+  const gold = r.gold.filter(g => cat.has(g));
+  const outside = r.gold.filter(g => !cat.has(g));
+  const jev = Object.entries(r.fits || {}).filter(([, v]) => v >= S.fit).map(([n]) => n);
+  const gs = new Set(gold), js = new Set(jev);
+  return { gold, outside, jev, labeled: r.gold.length > 0,
+           agree: jev.filter(n => gs.has(n)), jevOnly: jev.filter(n => !gs.has(n)), kwOnly: gold.filter(n => !js.has(n)) };
+}
+const FILTERS = [
+  ["all", "All", () => true],
+  ["agree", "Agree", c => c.agree.length > 0],
+  ["jev", "Jev only", c => c.labeled && c.jevOnly.length > 0],
+  ["kw", "Keyword only", c => c.kwOnly.length > 0],
+  ["new", "New links", c => !c.labeled && c.jev.length > 0],
+  ["promo", "Promo", (c, r) => r.promo >= 0.5],
+  ["none", "No link", c => c.jev.length === 0],
+];
+
+// ---------------------------------------------------------------- metrics
+function metrics(rows, C) {
+  const lab = rows.filter((r, i) => C[i].labeled);
+  const LC = rows.map((r, i) => C[i]).filter(c => c.labeled);
+  let tp = 0, fp = 0, fn = 0, top1 = 0, top3 = 0;
+  lab.forEach((r, i) => {
+    const c = LC[i], g = new Set(c.gold);
+    if (g.has(r.choice)) top1++;
+    if ((r.top3 || []).some(([n]) => g.has(n))) top3++;
+    tp += c.agree.length; fp += c.jevOnly.length; fn += c.kwOnly.length;
+  });
+  const unl = C.filter(c => !c.labeled);
+  const tokens = rows.reduce((a, r) => a + (r.input_tokens || 0), 0);
+  const lat = rows.map(r => r.latency_s).sort((a, b) => a - b);
+  return { n: rows.length, nl: lab.length, top1: lab.length ? top1 / lab.length : null, top3: lab.length ? top3 / lab.length : null,
+           prec: tp + fp ? tp / (tp + fp) : null, rec: tp + fn ? tp / (tp + fn) : null, tp, fp, fn,
+           newN: unl.filter(c => c.jev.length).length, unl: unl.length, promo: rows.filter(r => r.promo >= 0.5).length,
+           tokens, cost: tokens / 1e6 * (S.meta?.price_per_m ?? 0.042),
+           p50: lat.length ? lat[Math.floor(lat.length / 2)] : null, p90: lat.length ? lat[Math.floor(lat.length * 0.9)] : null };
+}
+
+// ---------------------------------------------------------------- render
+function render() {
+  const rows = S.rows, C = rows.map(cls);
+  const m = metrics(rows, C);
+  $("#m-count").textContent = `${m.n} / ${S.total || m.n}`;
+  $("#prog").style.width = (S.total ? Math.min(100, m.n / S.total * 100) : (m.n ? 100 : 0)) + "%";
+  $("#t-top1").textContent = pct(m.top1); $("#t-top1s").textContent = `${m.nl} linked captures`;
+  $("#t-top3").textContent = pct(m.top3);
+  $("#t-prec").textContent = pct(m.prec); $("#t-precs").textContent = `${m.tp} agree · ${m.fp} Jev-only`;
+  $("#t-rec").textContent = pct(m.rec); $("#t-recs").textContent = `${m.fn} keyword-only`;
+  $("#t-new").textContent = m.unl ? `${m.newN}/${m.unl}` : "—"; $("#t-news").textContent = "unlinked get a link";
+  $("#t-promo").textContent = m.n ? `${m.promo}/${m.n}` : "—";
+  $("#t-cost").textContent = m.n ? "$" + m.cost.toFixed(4) : "—"; $("#t-tok").textContent = `${m.tokens.toLocaleString()} tokens`;
+  $("#t-lat").textContent = m.p50 != null ? m.p50.toFixed(2) + "s" : "—"; $("#t-lat90").textContent = m.p90 != null ? `p90 ${m.p90.toFixed(2)}s` : "p90";
+
+  // tabs
+  $("#tabs").innerHTML = FILTERS.map(([k, l, f]) => {
+    const n = rows.filter((r, i) => f(C[i], r)).length;
+    return `<button class="tab" data-f="${k}" aria-pressed="${S.filter === k}">${l}<span class="c">${n}</span></button>`;
+  }).join("");
+
+  // pages
+  const cnt = new Map();
+  C.forEach(c => { c.agree.forEach(n => bump(n, 0)); c.jevOnly.forEach(n => bump(n, c.labeled ? 1 : 2)); });
+  function bump(n, k) { const v = cnt.get(n) || [0, 0, 0]; v[k]++; cnt.set(n, v); }
+  const top = [...cnt].sort((a, b) => sum(b[1]) - sum(a[1])).slice(0, 10);
+  const mx = top.length ? sum(top[0][1]) : 1;
+  $("#pages").innerHTML = top.length ? top.map(([n, v]) => `<div class="pbar" title="${esc(n)}: ${v[0]} agree, ${v[1]} Jev-only on linked, ${v[2]} on unlinked">
+      <span class="name">${esc(n)}</span><span class="n">${sum(v)}</span>
+      <span class="track"><i style="width:${v[0]/mx*100}%;background:var(--blue)"></i><i style="width:${v[1]/mx*100}%;background:var(--amber)"></i><i style="width:${v[2]/mx*100}%;background:var(--midnight)"></i></span></div>`).join("")
+      + `<p class="hint">Blue: agrees with keywords · Amber: Jev-only on linked captures · Midnight: new link on an unlinked capture.</p>`
+    : `<p class="hint">No links at this threshold yet.</p>`;
+
+  // feed
+  const f = FILTERS.find(x => x[0] === S.filter)[2];
+  const q = S.q.toLowerCase();
+  const idx = rows.map((r, i) => i).filter(i => f(C[i], rows[i]) &&
+     (!q || (rows[i].title + " " + rows[i].author + " " + C[i].jev.join(" ") + " " + rows[i].gold.join(" ")).toLowerCase().includes(q))).reverse();
+  const feed = $("#feed");
+  if (!rows.length) { /* keep empty state */ }
+  else if (!idx.length) feed.innerHTML = `<div class="empty"><div class="big">NOTHING HERE</div>No captures match this filter.</div>`;
+  else feed.innerHTML = idx.slice(0, 400).map(i => item(rows[i], C[i])).join("") +
+       (idx.length > 400 ? `<p class="hint">Showing the 400 most recent of ${idx.length}. Use search or filters to narrow down.</p>` : "");
+  S.fresh.clear();
+  if (S.sel) renderDetail();
+}
+const sum = a => a[0] + a[1] + a[2];
+
+function item(r, c) {
+  const chips = [
+    ...c.agree.map(n => `<span class="chip agree" title="Both Jev and keywords link ${esc(n)}"><i>=</i>${esc(short(n))}</span>`),
+    ...c.jevOnly.map(n => `<span class="chip jev" title="Jev links, keywords did not"><i>+</i>${esc(short(n))}</span>`),
+    ...c.kwOnly.map(n => `<span class="chip kw" title="Keywords linked, Jev did not"><i>−</i><span>${esc(short(n))}</span></span>`),
+    ...c.outside.map(n => `<span class="chip out" title="Keyword link to a page outside the catalog">${esc(short(n))} · outside</span>`),
+  ];
+  if (!chips.length) chips.push(`<span class="chip none"><i>∅</i>no link</span>`);
+  const sub = Math.round(r.substance);
+  return `<button class="item${S.fresh.has(r.id) ? " fresh" : ""}" data-id="${esc(r.id)}" aria-current="${S.sel === r.id}">
+    <div class="i-top"><span class="src">${esc(r.source.toUpperCase())}</span><span>${esc(r.author || "")}${r.published ? " · " + esc(r.published) : ""}</span>
+      ${r.promo >= 0.5 ? `<span class="promo">PROMO ${r.promo.toFixed(2)}</span>` : ""}</div>
+    <div class="i-title">${esc(r.title)}</div>
+    <div class="chips">${chips.join("")}</div>
+    <div class="sig"><span>CHOICE <b>${esc(short(r.choice))}</b><span class="meter" title="confidence ${r.choice_conf}"><i style="width:${r.choice_conf*100}%"></i></span></span>
+      <span>SUBSTANCE <span class="dots" aria-label="substance ${r.substance.toFixed(1)} of 3">${"●".repeat(sub + 1)}${"○".repeat(3 - sub)}</span> ${r.substance.toFixed(1)}</span>
+      <span>P(NONE) ${r.p_none.toFixed(2)}</span></div>
+  </button>`;
+}
+
+async function renderDetail() {
+  const r = S.byId.get(S.sel); if (!r) return;
+  const c = cls(r);
+  let cap = S.caps.get(r.id);
+  const d = $("#detail");
+  const goldSet = new Set(r.gold);
+  const bars1 = (r.top || r.top3 || []).map(([n, p], i) => `<div class="bar${i === 0 ? " win" : ""}"><span class="lbl">${esc(n)}${goldSet.has(n) ? "<em>EXISTING</em>" : ""}</span><span class="v">${p.toFixed(3)}</span><span class="tr"><i style="width:${p*100}%"></i></span></div>`).join("");
+  const fits = Object.entries(r.fits || {}).sort((a, b) => b[1] - a[1]);
+  const bars2 = fits.length ? fits.map(([n, v]) => `<div class="bar${v >= S.fit ? " win" : ""}"><span class="lbl">${esc(n)}${goldSet.has(n) ? "<em>EXISTING</em>" : ""}<span class="verdict ${v >= S.fit ? "yes" : ""}">${v >= S.fit ? "LINK" : "NO LINK"}</span></span><span class="v">${v.toFixed(3)}</span><span class="tr"><i style="width:${v*100}%"></i><span class="th" style="left:${S.fit*100}%" title="threshold ${S.fit}"></span></span></div>`).join("")
+    : `<p class="note">Stage 2 skipped: p(none) = ${r.p_none.toFixed(2)} ≥ 0.80, so Jev judged no page fits.</p>`;
+  const levels = ["Hype / bait", "Opinion, ≤1 fact", "Useful info", "Dense knowledge"];
+  const sp = r.sub_probs || {};
+  const bars3 = levels.map((l, i) => { const v = sp[String(i)] ?? null; return `<div class="bar${Math.round(r.substance) === i ? " win" : ""}"><span class="lbl">${i} · ${l}</span><span class="v">${v == null ? "—" : v.toFixed(2)}</span><span class="tr"><i style="width:${(v||0)*100}%"></i></span></div>`; }).join("");
+  const li = (arr, k, sym) => arr.length ? arr.map(n => `<li><span class="chip ${k}"><i>${sym}</i>${k === "kw" ? `<span>${esc(n)}</span>` : esc(n)}</span></li>`).join("") : `<li class="note">—</li>`;
+  d.innerHTML = `<p class="eyebrow"><span>05 / Inspect</span><span>${c.labeled ? "HAS KEYWORD LINKS" : "UNLINKED"}</span></p>
+    <div class="d-meta"><span class="src">${esc(r.source.toUpperCase())}</span><span>${esc(r.author)}</span><span>${esc(r.published)}</span>
+      ${cap?.url ? `<a class="open" href="${esc(cap.url)}" target="_blank" rel="noopener">Open original ↗</a>` : ""}</div>
+    <div class="d-title">${esc(r.title)}</div>
+    <div class="d-sec"><h3><span>Links</span><span>threshold ${S.fit.toFixed(2)}</span></h3>
+      <div class="cmp"><div><h4>Jev</h4><ul>${li(c.agree, "agree", "=")}${c.jevOnly.length ? li(c.jevOnly, "jev", "+") : ""}</ul></div>
+      <div><h4>Keywords (existing)</h4><ul>${li(c.agree, "agree", "=")}${c.kwOnly.length ? li(c.kwOnly, "kw", "−") : ""}${c.outside.map(n => `<li><span class="chip out">${esc(n)} · outside</span></li>`).join("")}</ul></div></div></div>
+    <div class="d-sec"><h3><span>Stage 1 · Page choice</span><span>confidence ${r.choice_conf.toFixed(2)}</span></h3>${bars1}</div>
+    <div class="d-sec"><h3><span>Stage 2 · Fit per candidate</span><span>Noul p(yes)</span></h3>${bars2}</div>
+    <div class="d-sec"><h3><span>Substance</span><span>score ${r.substance.toFixed(2)} / 3</span></h3>${bars3}</div>
+    <div class="d-sec"><h3><span>Promotion</span><span>p(yes) ${r.promo.toFixed(2)}</span></h3>
+      <div class="bar${r.promo >= 0.5 ? " win" : ""}"><span class="lbl">Primarily promotion with unverifiable claims</span><span class="v">${r.promo >= 0.5 ? "YES" : "NO"}</span><span class="tr"><i style="width:${r.promo*100}%"></i><span class="th" style="left:50%"></span></span></div></div>
+    <div class="d-sec"><h3><span>Capture text · as sent to Jev</span><span>${r.input_tokens.toLocaleString()} tok · ${r.latency_s.toFixed(2)}s</span></h3>
+      <div class="text" id="captext">${cap ? esc(cap.text) : "Loading…"}</div></div>`;
+  if (!cap) {
+    const res = await fetch("/api/capture?id=" + encodeURIComponent(r.id));
+    if (res.ok) { cap = await res.json(); S.caps.set(r.id, cap); if (S.sel === r.id) renderDetail(); }
+  }
+}
+
+// ---------------------------------------------------------------- api activity grid
+const A = { calls: new Map(), fired: 0, recv: 0, fail: 0, msSum: 0, recvTimes: [], stick: true };
+const grid = $("#cgrid"), gwrap = $("#grid-wrap");
+const lvl = ms => ms < 600 ? 1 : ms < 1200 ? 2 : ms < 2500 ? 3 : 4;
+gwrap.addEventListener("scroll", () => { A.stick = gwrap.scrollTop + gwrap.clientHeight >= gwrap.scrollHeight - 20; });
+
+// Cells wrap left→right, top→bottom to fit the card's width; empty "ghost" squares
+// keep at least 7 rows visible and complete the current row.
+function perRow() { return Math.max(1, Math.floor((grid.clientWidth + 3) / 15)); }
+function fillGhosts() {
+  grid.querySelectorAll(".ghost").forEach(g => g.remove());
+  const n = A.calls.size, pr = perRow();
+  const target = Math.max(7 * pr, Math.ceil(n / pr) * pr);
+  grid.insertAdjacentHTML("beforeend", `<i class="ghost" role="presentation"></i>`.repeat(target - n));
+}
+new ResizeObserver(() => fillGhosts()).observe(gwrap);
+
+function apiReset() {
+  A.calls.clear(); A.fired = A.recv = A.fail = A.msSum = 0; A.recvTimes = []; A.stick = true;
+  grid.innerHTML = ""; fillGhosts();
+  apiCounters();
+}
+function cellFor(c) {
+  let el = A.calls.get(c.seq)?.el;
+  if (!el) {
+    const ghost = grid.querySelector(".ghost");
+    el = document.createElement("button");
+    el.className = "cell new"; el.setAttribute("role", "listitem");
+    el.dataset.seq = c.seq;
+    ghost ? grid.replaceChild(el, ghost) : grid.appendChild(el);
+    if (!grid.querySelector(".ghost")) { A.calls.set(c.seq, { el }); fillGhosts(); }
+  }
+  return el;
+}
+function paint(c) {
+  const el = c.el;
+  el.className = "cell" + (c.stage === 2 ? " s2" : "") + (c.status === "fl" ? " fl" : c.status === "fail" ? " fail" : " l" + lvl(c.ms)) + (S.sel === c.id ? " sel" : "");
+  el.setAttribute("aria-label", `call ${c.seq}, stage ${c.stage}, ${c.status === "fl" ? "in flight" : c.status === "fail" ? "failed" : c.ms + " ms"}`);
+}
+function apiEvent(ev, live = true) {
+  if (ev.type === "fire") {
+    const c = { seq: ev.seq, id: ev.id, stage: ev.stage, status: "fl", t0: performance.now() };
+    c.el = cellFor(c); A.calls.set(ev.seq, c); A.fired++; paint(c);
+    requestAnimationFrame(() => c.el.classList.remove("new"));
+  } else {
+    let c = A.calls.get(ev.seq);
+    if (!c) { c = { seq: ev.seq, id: ev.id, stage: ev.stage }; c.el = cellFor(c); A.calls.set(ev.seq, c); A.fired++; }
+    c.status = ev.type === "recv" ? "ok" : "fail"; c.ms = ev.ms; c.tokens = ev.tokens; c.err = ev.err;
+    if (c.status === "ok") { A.recv++; A.msSum += ev.ms; if (live) A.recvTimes.push(Date.now()); } else A.fail++;
+    paint(c);
+  }
+  if (A.stick) gwrap.scrollTop = gwrap.scrollHeight;
+  apiCounters();
+}
+function apiCounters() {
+  const flight = A.fired - A.recv - A.fail;
+  $("#c-fired").textContent = A.fired.toLocaleString();
+  $("#c-recv").textContent = A.recv.toLocaleString();
+  $("#c-flight").textContent = flight;
+  $("#c-flight-box").classList.toggle("on", flight > 0);
+  $("#c-fail").textContent = A.fail;
+  $("#c-lat").textContent = A.recv ? (A.msSum / A.recv / 1000).toFixed(2) + "s" : "—";
+  const now = Date.now(); A.recvTimes = A.recvTimes.filter(t => now - t < 60000);
+  $("#api-rate").textContent = S.status === "running" ? `${A.recvTimes.length} req/min` : (A.fired ? `${A.fired} calls` : "— req/min");
+}
+setInterval(() => { if (S.status === "running") apiCounters(); }, 1000);
+function apiFromPast(calls, rows) {
+  apiReset();
+  if (calls && calls.length) { calls.sort((a, b) => a.seq - b.seq).forEach(c => apiEvent({ ...c, type: c.type || "recv" }, false)); return; }
+  let seq = 0;   // older runs: rebuild one square per stage from the results
+  rows.forEach(r => {
+    const ms = Math.round((r.latency_s || 0) * 1000), two = Object.keys(r.fits || {}).length > 0;
+    apiEvent({ type: "recv", seq: ++seq, id: r.id, stage: 1, ms: two ? Math.round(ms / 2) : ms }, false);
+    if (two) apiEvent({ type: "recv", seq: ++seq, id: r.id, stage: 2, ms: Math.round(ms / 2) }, false);
+  });
+}
+function markSelected() { A.calls.forEach(c => c.el.classList.toggle("sel", c.id === S.sel)); }
+
+const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; document.body.appendChild(tip);
+grid.addEventListener("mouseover", e => {
+  const el = e.target.closest(".cell"); if (!el) return;
+  const c = A.calls.get(+el.dataset.seq); if (!c) return;
+  const r = S.byId.get(c.id);
+  const title = r ? r.title : c.id.split("/").pop().replace(/^\d{4}-\d{2}-\d{2}-[^-]*-/, "").replace(/\.md$/, "");
+  tip.innerHTML = `CALL #${c.seq} · STAGE ${c.stage} ${c.stage === 1 ? "(choice · score · noul)" : "(fit nouls)"}<br>` +
+    (c.status === "fl" ? "<b>in flight…</b>" : c.status === "fail" ? `failed · ${esc(c.err || "")}` : `<b>${c.ms} ms</b>${c.tokens ? ` · ${c.tokens.toLocaleString()} tokens` : ""}`) +
+    `<br>${esc(title.slice(0, 90))}`;
+  tip.hidden = false;
+});
+grid.addEventListener("mousemove", e => { tip.style.left = Math.min(innerWidth - 330, e.clientX + 14) + "px"; tip.style.top = (e.clientY + 16) + "px"; });
+grid.addEventListener("mouseleave", () => tip.hidden = true);
+grid.addEventListener("click", e => {
+  const el = e.target.closest(".cell"); if (!el) return;
+  const c = A.calls.get(+el.dataset.seq); if (!c || !S.byId.has(c.id)) return;
+  S.sel = c.id; markSelected(); render(); renderDetail();
+});
+
+// ---------------------------------------------------------------- data flow
+function reset(total) { S.rows = []; S.byId.clear(); S.total = total; S.sel = null; S.errors = []; showErrors(); apiReset();
+  $("#detail").innerHTML = `<p class="eyebrow"><span>05 / Inspect</span></p><p class="d-empty">Select a capture to inspect Jev's signals.</p>`;
+  $("#feed").innerHTML = `<div class="empty"><div class="big">WAITING FOR JEV…</div>Results stream in as each capture is judged.</div>`; }
+function addRow(r) { if (S.byId.has(r.id)) return; S.rows.push(r); S.byId.set(r.id, r); S.fresh.add(r.id); schedule(); }
+function showErrors() { const e = $("#errors"); e.hidden = !S.errors.length; e.textContent = S.errors.slice(-8).join("\n"); }
+function setStatus(st, label) {
+  S.status = st; const p = $("#p-run");
+  p.className = "pill " + (st === "running" ? "live" : st === "failed" ? "bad" : st === "done" ? "ok" : "");
+  p.innerHTML = `<span class="dot"></span>RUN::${label || st.toUpperCase()}`;
+  $("#run").disabled = st === "running"; $("#stop").disabled = st !== "running";
+}
+
+function attach(id, total) {
+  if (S.es) S.es.close();
+  S.runId = id; setStatus("running");
+  const es = new EventSource(`/api/stream?run=${encodeURIComponent(id)}&from=0`); S.es = es;
+  es.onmessage = e => {
+    const ev = JSON.parse(e.data);
+    if (ev.type === "row") addRow(ev.row);
+    else if (ev.type === "fire" || ev.type === "recv" || ev.type === "fail") apiEvent(ev);
+    else if (ev.type === "error") { S.errors.push(ev.id ? `${ev.id.split("/").pop().slice(0, 50)} → ${ev.message}` : ev.message); showErrors(); }
+    else if (ev.type === "end") { es.close(); S.es = null; setStatus(ev.status); loadRuns(); schedule(); }
+  };
+  es.onerror = () => { if (S.status === "running") setStatus("running", "RECONNECTING"); };
+}
+
+async function run() {
+  const body = { set: $("#set").value, limit: +$("#limit").value || 0, fit: S.fit, mock: S.mock, concurrency: +$("#conc").value || 6 };
+  const res = await fetch("/api/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const j = await res.json();
+  if (!res.ok) { S.errors = [j.error || "Could not start run"]; showErrors(); return; }
+  reset(j.total); attach(j.id, j.total);
+}
+
+async function loadRuns() {
+  const runs = await (await fetch("/api/runs")).json();
+  $("#past").innerHTML = `<option value="">— load a previous run —</option>` + runs.map(r =>
+    `<option value="${esc(r.id)}">${esc(r.id)} · ${r.done}${r.total ? "/" + r.total : ""}${r.params?.mock ? " · mock" : ""}</option>`).join("");
+}
+async function loadPast(id) {
+  if (!id) return;
+  if (S.es) { S.es.close(); S.es = null; }
+  const j = await (await fetch("/api/runs/" + encodeURIComponent(id))).json();
+  reset(j.meta?.total || j.rows.length); j.rows.forEach(r => { S.rows.push(r); S.byId.set(r.id, r); });
+  setStatus("done", "LOADED"); apiFromPast(j.calls, j.rows); render();
+}
+
+function estimate() {
+  if (!S.meta) return;
+  const set = $("#set").value, lim = +$("#limit").value || 0;
+  const base = { default: S.meta.labeled + Math.min(100, S.meta.captures - S.meta.labeled), labeled: S.meta.labeled, unlabeled: S.meta.captures - S.meta.labeled, all: S.meta.captures }[set];
+  const n = lim ? Math.min(lim, base) : base;
+  $("#estimate").textContent = S.mock ? `${n} captures · mock mode, no API calls or cost.` : `${n} captures · ≤ ${n * 2} API calls · est. ≈ $${(n * 9000 / 1e6 * S.meta.price_per_m).toFixed(2)}`;
+}
+
+// ---------------------------------------------------------------- events
+document.addEventListener("click", e => {
+  const it = e.target.closest(".item"); if (it) { S.sel = it.dataset.id; document.querySelectorAll(".item").forEach(x => x.setAttribute("aria-current", x === it)); markSelected(); renderDetail(); if (innerWidth <= 1320) $("#detail").scrollIntoView({ behavior: "smooth" }); return; }
+  const tb = e.target.closest(".tab"); if (tb) { S.filter = tb.dataset.f; render(); }
+});
+$("#run").onclick = run;
+$("#stop").onclick = () => fetch("/api/stop", { method: "POST" });
+$("#fit").oninput = e => { S.fit = +e.target.value; $("#fit-val").textContent = S.fit.toFixed(2); schedule(); };
+$("#q").oninput = e => { S.q = e.target.value; schedule(); };
+$("#past").onchange = e => loadPast(e.target.value);
+$("#set").onchange = estimate; $("#limit").oninput = estimate;
+$("#m-live").onclick = () => { S.mock = false; $("#m-live").setAttribute("aria-pressed", true); $("#m-mock").setAttribute("aria-pressed", false); estimate(); };
+$("#m-mock").onclick = () => { S.mock = true; $("#m-mock").setAttribute("aria-pressed", true); $("#m-live").setAttribute("aria-pressed", false); estimate(); };
+
+(async function init() {
+  S.meta = await (await fetch("/api/meta")).json();
+  S.catSet = new Set(S.meta.catalog_names);
+  const k = $("#p-key"); k.className = "pill " + (S.meta.key_present ? "ok" : "bad");
+  k.innerHTML = `<span class="dot"></span>KEY::${S.meta.key_present ? "SET" : "MISSING"}`;
+  $("#p-model").innerHTML = `<span class="dot"></span>MODEL::${esc(S.meta.model)}`;
+  $("#corpus").textContent = `${S.meta.captures} caps · ${S.meta.catalog} pages`;
+  if ((S.meta.version || 0) < 3) {
+    S.errors = ["The Jev Lab server running is an older version, so live API activity won't update. Close its Terminal window and double-click start.command again."];
+    showErrors();
+    $("#api-rate").textContent = "SERVER OUTDATED · RESTART";
+  }
+  if (!S.meta.key_present) { S.mock = true; $("#m-mock").click(); S.errors = ["No API key found. Mock mode is on. Add TYPESAFE_API_KEY to your shell or jev-lab/.env, then restart."]; showErrors(); }
+  apiReset(); estimate(); render(); loadRuns();
+  if (S.meta.running) { reset(0); attach(S.meta.running); }
+})();
+</script>
+</body>
+</html>

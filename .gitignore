@@ -1,0 +1,12 @@
+# secrets
+.env
+
+# your own data at the repo root (the bundled demo/ stays tracked)
+/captures/
+/catalog.json
+/runs/
+
+# python / os
+__pycache__/
+*.pyc
+.DS_Store

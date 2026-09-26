@@ -1,0 +1,146 @@
+[
+  {
+    "name": "Retrieval Augmented Generation (RAG)",
+    "section": "AI & Engineering",
+    "folder": "Concepts",
+    "blurb": "concept: grounding LLM answers in retrieved documents; chunking, reranking, evaluation",
+    "purpose": "grounding LLM answers in retrieved documents; chunking, reranking, evaluation",
+    "headings": [
+      "Chunking",
+      "Retrieval and reranking",
+      "Evaluation",
+      "Failure modes"
+    ],
+    "found": true
+  },
+  {
+    "name": "Agent Evaluation",
+    "section": "AI & Engineering",
+    "folder": "Concepts",
+    "blurb": "concept: how to test autonomous agents; task suites, graders, regression checks",
+    "purpose": "how to test autonomous agents; task suites, graders, regression checks",
+    "headings": [
+      "Task suites",
+      "Graders",
+      "Regression testing"
+    ],
+    "found": true
+  },
+  {
+    "name": "Local AI",
+    "section": "AI & Engineering",
+    "folder": "Concepts",
+    "blurb": "concept: running models on hardware you own; privacy, cost and availability trade-offs",
+    "purpose": "running models on hardware you own; privacy, cost and availability trade-offs",
+    "headings": [
+      "Hardware",
+      "Privacy",
+      "Cost"
+    ],
+    "found": true
+  },
+  {
+    "name": "Open-Weight Models",
+    "section": "AI & Engineering",
+    "folder": "Concepts",
+    "blurb": "synthesis: releases of downloadable model weights and how they compare with closed models",
+    "purpose": "releases of downloadable model weights and how they compare with closed models",
+    "headings": [
+      "Release log",
+      "Benchmarks",
+      "Licences"
+    ],
+    "found": true
+  },
+  {
+    "name": "Prompt Engineering",
+    "section": "AI & Engineering",
+    "folder": "Concepts",
+    "blurb": "concept: writing instructions and examples that get reliable output from language models",
+    "purpose": "writing instructions and examples that get reliable output from language models",
+    "headings": [
+      "Patterns",
+      "Anti-patterns",
+      "Examples"
+    ],
+    "found": true
+  },
+  {
+    "name": "Vibe Coding",
+    "section": "AI & Engineering",
+    "folder": "Concepts",
+    "blurb": "concept: building software by describing intent to an AI coding assistant",
+    "purpose": "building software by describing intent to an AI coding assistant",
+    "headings": [
+      "Workflows",
+      "Where it breaks",
+      "Tools"
+    ],
+    "found": true
+  },
+  {
+    "name": "Knowledge Management Tools",
+    "section": "Tools",
+    "folder": "Tools",
+    "blurb": "tool notes: note-taking apps, bookmark managers and sync set-ups",
+    "purpose": "note-taking apps, bookmark managers and sync set-ups",
+    "headings": [
+      "Apps compared",
+      "Sync",
+      "Plugins"
+    ],
+    "found": true
+  },
+  {
+    "name": "Home Automation",
+    "section": "Tools",
+    "folder": "Tools",
+    "blurb": "project notes: sensors, local hubs and automations at home",
+    "purpose": "sensors, local hubs and automations at home",
+    "headings": [
+      "Devices",
+      "Automations",
+      "Energy"
+    ],
+    "found": true
+  },
+  {
+    "name": "Index Investing",
+    "section": "Life & Money",
+    "folder": "Life",
+    "blurb": "notes: low-cost index funds, allocation and rebalancing",
+    "purpose": "low-cost index funds, allocation and rebalancing",
+    "headings": [
+      "Allocation",
+      "Costs",
+      "Rebalancing"
+    ],
+    "found": true
+  },
+  {
+    "name": "Climate Tech",
+    "section": "Life & Money",
+    "folder": "Life",
+    "blurb": "research: clean energy, storage and carbon removal companies and ideas",
+    "purpose": "clean energy, storage and carbon removal companies and ideas",
+    "headings": [
+      "Energy storage",
+      "Carbon removal",
+      "Grid"
+    ],
+    "found": true
+  },
+  {
+    "name": "Productivity Systems",
+    "section": "Life & Money",
+    "folder": "Life",
+    "blurb": "notes: planning, focus and review routines",
+    "purpose": "planning, focus and review routines",
+    "headings": [
+      "Weekly review",
+      "Focus",
+      "Planning"
+    ],
+    "found": true
+  }
+]
